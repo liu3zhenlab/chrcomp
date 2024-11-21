@@ -1,0 +1,342 @@
+#!/usr/bin/perl -w
+#======================================================================
+# chrcomp 
+#
+# Author: Sanzhen Liu <liu3zhen@ksu.edu>
+# 3/2/2021
+#
+# The Perl script to find the match region and plot alignments
+#======================================================================
+
+use strict;
+use warnings;
+use Getopt::Long;
+use File::Temp;
+use FindBin;
+use Term::ANSIColor qw(:constants);
+use lib "$FindBin::Bin/lib";
+my $version = "0.1.0";
+
+my $prefix = "chrcomp_out";
+my $threads = 4;
+my $nuc4para = "--maxmatch --breaklen 500 --mincluster 500 --minmatch 25";
+my $identity = 90;
+my $match = 10000;
+my $bandcol = "bisque3";
+my $syriOption = "--invgaplen 1000000 --allow-offset 100";
+my $minsyn = 10000; # minimal syntenic regions to plot in Syriplot
+my $minhdr = 10000; # minimal hard alignment regions to plot in Syriplot
+my $minothers = 50000; # minimal lengths of other SV types to plot in Syriplot
+my $maxinvsegratio = 3; # maximum length ratio of two inverted segments
+my $minINS = 30000; # minimal length of large INDEL
+sub prompt {
+    print <<EOF;
+    Usage: perl $0 --qry <fasta> --ref <fasta> --qchr <str> --rchr <str> [options]
+    [Options]
+    --qry <file>     the query fasta file with one or multiple sequences that include the sequence specified by --qchr; required
+    --ref <file>     the reference fasta file with one or multiple sequences that include the sequence specified by --rchr; required
+    --qchr <str>     query chromosome or contig; required
+    --rchr <str>     reference chromosome or contig; required
+    --newqchr <str>  new name for the chromosome/contig of query; optional
+    --newrchr <str>  new name for the chromosome/contig of reference; optional
+    --qrevcom        reverse complement query if specified
+    --rrevcom        reverse complement reference if specified
+    --qryname <str>  query name; optional 
+    --refname <str>  reference name; optional
+    --qstart <num>   bp position for the region start (NULL)
+    --qend <num>     bp position for the region end (NULL)
+    --rstart <num>   bp position for the region start (NULL)
+    --rend <num>     bp position for the region end (NULL)
+    --identity <num> minimal percentage of identity from 0 to 100 ($identity)
+    --match <num>    minimal bp match of an alignment ($match)
+    --nuc4para <str> four NUCmer parameters ($nuc4para)
+    --syriOption <str> Optional parameters for the syri run ($syriOption)
+    --minsyn <num>   minimal syntenic regions to plot in Syriplot ($minsyn)
+    --minhdr <num>   minimal hard alignment regions to plot in Syriplot ($minhdr)
+    --minothers <num> minimal lengths of other SV types to plot in Syriplot ($minothers)
+    --maxinvsegratio <float> maximum length ratio of two inverted segments ($maxinvsegratio)
+    --minINS <num>   minimal length of large insertion or deletion ($minINS)
+    --prefix <str>   the output directory and the prefix for output files ($prefix)
+    --threads <num>  number of cpus ($threads)
+    --bandcol <str>  a valid R color name ($bandcol)
+    --version        version information
+    --help           help information.
+EOF
+exit;
+}
+
+###############################################
+# parameters:
+###############################################
+my %opts = ();
+my ($qry, $ref, $qchr, $rchr);
+
+&GetOptions(\%opts, "qry=s", "ref=s", "qchr=s", "rchr=s",
+                    "qrevcom", "rrevcom",
+					"qryname=s", "refname=s",
+					"newqchr=s", "newrchr=s",
+                    "qstart=i", "qend=i", "rstart=i", "rend=i",
+                    "identity=i", "match=i",
+					"nuc4para=s", "syriOption=s",
+					"minsyn=i", "minhdr=i", "minothers=i",
+					"maxinvsegratio=f",
+					"prefix=s", "threads=i", "bandcol=s",
+                    "version", "help");
+
+if (exists $opts{version}) {
+	print "$version\n";
+	exit;
+}
+
+&prompt if exists $opts{help} or !%opts;
+if (!exists $opts{qry} or !exists $opts{ref}) {
+	print STDERR RED, "Both --qry and --ref are required\n", RESET;
+	&prompt;
+} else {
+	$qry = $opts{qry};
+	$ref = $opts{ref};
+}
+
+if (!exists $opts{qchr} or !exists $opts{rchr}) {
+	print STDERR RED, "Both --qchr and --rchr are required\n", RESET;
+	&prompt;
+} else {
+	$qchr = $opts{qchr};
+	$rchr = $opts{rchr};
+}
+
+$nuc4para = $opts{nuc4para} if exists $opts{nuc4para};
+$syriOption = $opts{syriOption} if exists $opts{syriOption};
+$identity = $opts{identity} if exists $opts{identity};
+$match = $opts{match} if exists $opts{match};
+$minsyn = $opts{minsyn} if exists $opts{minsyn};
+$minhdr = $opts{minhdr} if exists $opts{minhdr};
+$minothers = $opts{minothers} if exists $opts{minothers};
+$maxinvsegratio = $opts{maxinvsegratio} if exists $opts{maxinvsegratio};
+$prefix = $opts{prefix} if exists $opts{prefix};
+$threads = $opts{threads} if exists $opts{threads};
+$bandcol = $opts{bandcol} if exists $opts{bandcol};
+
+my $qrevcom = 0;
+my $rrevcom = 0;
+my $newqchr = $qchr;
+my $newrchr = $rchr;
+my $qryname = "qry";
+my $refname = "ref";
+my $qstart = "NULL";
+my $qend = "NULL";
+my $rstart = "NULL";
+my $rend = "NULL";
+$newqchr = $opts{newqchr} if (exists $opts{newqchr});
+$newrchr = $opts{newrchr} if (exists $opts{newrchr});
+$qryname = $opts{qryname} if (exists $opts{qryname});
+$refname = $opts{refname} if (exists $opts{refname});
+$qstart = $opts{qstart} if (exists $opts{qstart});
+$qend = $opts{qend} if (exists $opts{qend});
+$rstart = $opts{rstart} if (exists $opts{rstart});
+$rend = $opts{rend} if (exists $opts{rend});
+$qrevcom = 1  if (exists $opts{qrevcom});
+$rrevcom = 1  if (exists $opts{rrevcom});
+
+###############################################
+# preparation
+###############################################
+# create a directory for outputs
+if (-d $prefix) {
+	print STDERR RED, "Warning: the directory $prefix exists.\n", RESET;
+} else {
+	`mkdir $prefix`;
+}
+
+# script path:
+my $scriptPath = $FindBin::Bin;
+my $utilsPath = $scriptPath."/utils/";
+
+&runreport("Start to run chrcomp");
+
+###############################################
+# check requirments
+###############################################
+&cmd_check("nucmer");
+&cmd_check("delta-filter");
+&cmd_check("show-coords");
+&cmd_check("R");
+&cmd_check("syri");
+
+&runreport("Requirement checked");
+
+###############################################
+# 1. sequence extraction
+###############################################
+# output fasta files:
+my ($qry_target, $ref_target);
+if (($qstart eq "NULL") or ($qend eq "NULL")) {
+	$qry_target = $prefix."/01a_".$qryname."_".$qchr.".fasta";
+} else {
+	$qry_target = $prefix."/01a_".$qryname."_".$qchr."_".$qstart."-".$qend.".fasta";
+}
+
+if (($rstart eq "NULL") or ($rend eq "NULL")) {
+	$ref_target = $prefix."/01b_".$refname."_".$rchr.".fasta";
+} else {
+	$ref_target = $prefix."/01b_".$refname."_".$rchr."_".$rstart."-".$rend.".fasta";
+}
+
+&subseq($qry, $qchr, $qstart, $qend, $newqchr, $qrevcom, $qry_target);
+&subseq($ref, $rchr, $rstart, $rend, $newrchr, $rrevcom, $ref_target);
+
+###############################################
+# 2. nucmer alignment
+###############################################
+my $delta_out = $prefix."/02a_".$prefix.$qchr."_".$rchr.".raw.delta";
+my $delta_filt = $prefix."/02b_".$prefix.$qchr."_".$rchr.".filt.delta";
+my $filt_coords = $prefix."/02c_".$prefix.$qchr."_".$rchr.".filt.coords";
+my $filt_coords4plot = $prefix."/02d_".$prefix.$qchr."_".$rchr.".filt.coords4plot";
+
+# NUCmer
+`nucmer $nuc4para --delta $delta_out --threads $threads $ref_target $qry_target`;
+
+# filter
+`delta-filter -m -i $identity -l $match $delta_out > $delta_filt`;
+
+# convert delta to table
+`echo -e "rstart\trend\tqstart\tqend\trmatch\tqmatch\tidentity\trlen\tqlen\tref\tqry" > $filt_coords4plot`;
+`show-coords -HTl $delta_filt >> $filt_coords4plot`;
+`show-coords -THrd $delta_filt > $filt_coords`;
+
+&runreport("step 02: NUCmer alignment done");
+
+###############################################
+# 3. syri
+###############################################
+my $syri_outdir = $prefix;
+my $syri_prefix = "03_".$qchr."_".$rchr;
+my $syri_cmd = "syri --dir $syri_outdir --prefix $syri_prefix -c $filt_coords --nc $threads -r $ref_target -q $qry_target -d $delta_filt $syriOption";
+&runreport("step 03a: Syri command");
+print STDERR "  $syri_cmd\n";
+system($syri_cmd);
+#`syri --dir $syri_outdir --prefix $syri_prefix -c $filt_coords --nc $threads -r $ref_target -q $qry_target -d $delta_filt $syriOption`;
+
+&runreport("step 03b: Syri run done");
+
+###############################################
+# 4. plot
+###############################################
+my $alnplot_r = $utilsPath."/nucmerplot.R";
+my $dotplot_r = $utilsPath."/dotplot.R";
+my $syriplot_r = $utilsPath."/syriplot.simple.R";
+
+my $syri_out = $syri_outdir."/".$syri_prefix."syri.out";
+
+my $alnplot_pdf = "04a_".$qchr."_".$rchr."nucmer.alnplot.pdf";
+my $dotplot_pdf = "04b_".$qchr."_".$rchr."nucmer.dotplot.pdf";
+my $syriplot_pdf = $prefix."/"."04c_".$qchr."_".$rchr."nucmer.syriplot.pdf";
+
+`Rscript $alnplot_r $filt_coords4plot $bandcol $qryname $refname $prefix $alnplot_pdf`;
+&runreport("step 04a: NUCmer alignment figure plotted");
+
+`Rscript $dotplot_r $filt_coords4plot $bandcol $qryname $refname $prefix $dotplot_pdf`;
+&runreport("step 04b: NUCmer dotplot plotted");
+
+my $plotchr;
+#if ($newrchr eq $newqchr) {
+`Rscript $syriplot_r $syri_out $filt_coords4plot $newqchr $newrchr $qryname $refname $syriplot_pdf $minsyn $minhdr $minothers $maxinvsegratio $minINS`;
+&runreport("step 04c: Syri figure plotted");
+
+###############################################
+# cleanup
+###############################################
+#if (! exists $opts{ref}) {
+#	`rm $ref_fas*`;
+#}
+
+###############################################
+# module 1: check command availability
+###############################################
+sub cmd_check {
+	my $cmd = shift;
+	my $cmdPath=`which $cmd 2>/dev/null`;
+	if (!$cmdPath) {# not founded
+		print STDERR RED, "  $cmd is not found\n", RESET;
+		print STDERR RED, "Exit\n", RESET;
+		exit;
+	}
+}
+
+###############################################
+# module 2: report running result
+###############################################
+# funtion to report running return
+sub runreport {
+	my $injob = shift;
+    my $dateinfo = `date +'o %Y-%m-%d %H:%M:%S'`;
+	print STDERR MAGENTA, "$dateinfo", RESET;
+	print STDERR "  $injob.\n";
+}
+
+###############################################
+# module 3: extract sequence
+###############################################
+# functoin to extract target sequence (similar to getfasta in bedtools)
+sub subseq {
+	my ($infas, $inchr, $instart, $inend, $newchrname, $in_revcom, $outfas) = @_;
+	my $inchr_seq = "";
+	my $outseq;
+	open(FAS, "<", $infas) || die;
+	while (<FAS>) {
+		chomp;
+		if (/^>(.+)/) {
+			my $full_name = $1;
+			my $short_name = $full_name;
+			$short_name =~ s/[ \t].*$//g;
+			if (($full_name eq $inchr) or ($short_name eq $inchr)) {
+				$_ = <FAS>; chomp;
+				while ($_ !~ /^>/) {
+					$inchr_seq .= $_;
+					last if eof;
+					$_ = <FAS>; chomp;
+				}
+				last;
+			}
+		}
+	}
+	close FAS;
+	
+	if ($inchr_seq eq "") {
+		&runreport("ERROR: $inchr was not found in $infas");
+		exit;
+	} else {
+		if (($instart ne "NULL") and ($inend ne "NULL")) {
+			$outseq = substr($inchr_seq, $instart, $inend - $instart + 1);
+		} else {
+			$outseq = $inchr_seq;
+		}
+	}
+
+	# reverse complement if specified
+	if ($in_revcom) {
+		$outseq = &revcom($outseq);
+	}
+
+	# print out extracted sequence:
+	open(OUT, ">", $outfas) || die;
+	#if ($in_revcom) {
+	#	print OUT ">$newchrname";
+	#	print OUT "_rc\n";
+	#} else {
+	print OUT ">$newchrname\n";
+	#}
+	while (my $chunk = substr($outseq, 0, 80, "")) {
+		print OUT "$chunk\n";
+	}
+	close OUT;
+}
+
+### module for reverse complement sequences
+sub revcom {
+	my $ori_seq = shift @_;
+	my $revcomseq = reverse($ori_seq);
+	$revcomseq =~ tr/AGCTagct/TCGAtcga/;
+	return $revcomseq;
+}
+
