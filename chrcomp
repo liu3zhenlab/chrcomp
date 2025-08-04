@@ -225,7 +225,7 @@ if (!$onlyplot) {
 my $syri_outdir = $prefix;
 my $syri_prefix = "03_".$qchr."_".$rchr;
 my $syri_cmd = "syri --dir $syri_outdir --prefix $syri_prefix -c $filt_coords --nc $threads -r $ref_target -q $qry_target -d $delta_filt $syriOption";
-&runreport("Syri command:");
+&runreport("Syri command");
 print STDERR "  $syri_cmd\n";
 
 if (!$onlyplot) {

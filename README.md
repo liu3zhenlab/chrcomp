@@ -7,7 +7,9 @@ All required packages can be installed through [conda](https://docs.conda.io/en/
 git clone https://github.com/liu3zhenlab/chrcomp.git
 cd chrcomp
 conda env create -f chrcomp.yml
+
 # test run
+conda activate chrcomp
 cd test
 sh run.sh
 ```
