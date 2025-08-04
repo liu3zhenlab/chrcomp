@@ -4,8 +4,8 @@
 #SBATCH --time=3-00:00:00
 
 . "/homes/liu3zhen/anaconda3/etc/profile.d/conda.sh"
-export PATH="/homes/liu3zhen/anaconda3/bin:$PATH"
-conda activate syri2
+export PATH="/homes/liu3zhen/anaconda/bin:$PATH"
+conda activate chrcomp
 
 qry_fas=data/qry.fasta
 ref_fas=data/ref.fasta
