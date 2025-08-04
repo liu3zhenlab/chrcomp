@@ -15,7 +15,7 @@ use File::Temp;
 use FindBin;
 use Term::ANSIColor qw(:constants);
 use lib "$FindBin::Bin/lib";
-my $version = "0.1.0";
+my $version = "0.1.1";
 
 my $prefix = "chrcomp_out";
 my $threads = 4;
@@ -24,11 +24,11 @@ my $identity = 90;
 my $match = 10000;
 my $bandcol = "bisque3";
 my $syriOption = "--invgaplen 1000000 --allow-offset 100";
-my $minsyn = 10000; # minimal syntenic regions to plot in Syriplot
-my $minhdr = 10000; # minimal hard alignment regions to plot in Syriplot
+my $minsyn = 30000; # minimal syntenic regions to plot in Syriplot
+my $minhdr = 30000; # minimal hard alignment regions to plot in Syriplot
 my $minothers = 50000; # minimal lengths of other SV types to plot in Syriplot
 my $maxinvsegratio = 3; # maximum length ratio of two inverted segments
-my $minINS = 30000; # minimal length of large INDEL
+my $minINS = 10000; # minimal length of large INDEL
 sub prompt {
     print <<EOF;
     Usage: perl $0 --qry <fasta> --ref <fasta> --qchr <str> --rchr <str> [options]
@@ -59,6 +59,9 @@ sub prompt {
     --prefix <str>   the output directory and the prefix for output files ($prefix)
     --threads <num>  number of cpus ($threads)
     --bandcol <str>  a valid R color name ($bandcol)
+    --onlyplot       only perform plotting if specified; alignment and syri will be skipped
+                     "--onlyplot" is only useful for rerunning the analysis that was successfully run.
+					 The purpose is to allow to reset a few plotting parameters. 
     --version        version information
     --help           help information.
 EOF
@@ -79,7 +82,7 @@ my ($qry, $ref, $qchr, $rchr);
                     "identity=i", "match=i",
 					"nuc4para=s", "syriOption=s",
 					"minsyn=i", "minhdr=i", "minothers=i",
-					"maxinvsegratio=f",
+					"maxinvsegratio=f", "onlyplot",
 					"prefix=s", "threads=i", "bandcol=s",
                     "version", "help");
 
@@ -116,6 +119,10 @@ $maxinvsegratio = $opts{maxinvsegratio} if exists $opts{maxinvsegratio};
 $prefix = $opts{prefix} if exists $opts{prefix};
 $threads = $opts{threads} if exists $opts{threads};
 $bandcol = $opts{bandcol} if exists $opts{bandcol};
+my $onlyplot = 0;
+if (exists $opts{onlyplot}) {
+	$onlyplot = 1;
+}
 
 my $qrevcom = 0;
 my $rrevcom = 0;
@@ -182,8 +189,13 @@ if (($rstart eq "NULL") or ($rend eq "NULL")) {
 	$ref_target = $prefix."/01b_".$refname."_".$rchr."_".$rstart."-".$rend.".fasta";
 }
 
-&subseq($qry, $qchr, $qstart, $qend, $newqchr, $qrevcom, $qry_target);
-&subseq($ref, $rchr, $rstart, $rend, $newrchr, $rrevcom, $ref_target);
+if (!$onlyplot) {
+	&subseq($qry, $qchr, $qstart, $qend, $newqchr, $qrevcom, $qry_target);
+	&subseq($ref, $rchr, $rstart, $rend, $newrchr, $rrevcom, $ref_target);
+	&runreport("step 01: Query and reference sequences retrieved");
+} else {
+	&runreport("Sequence retrieval was skipped due to --onlyplot");
+}
 
 ###############################################
 # 2. nucmer alignment
@@ -193,18 +205,19 @@ my $delta_filt = $prefix."/02b_".$prefix.$qchr."_".$rchr.".filt.delta";
 my $filt_coords = $prefix."/02c_".$prefix.$qchr."_".$rchr.".filt.coords";
 my $filt_coords4plot = $prefix."/02d_".$prefix.$qchr."_".$rchr.".filt.coords4plot";
 
-# NUCmer
-`nucmer $nuc4para --delta $delta_out --threads $threads $ref_target $qry_target`;
-
-# filter
-`delta-filter -m -i $identity -l $match $delta_out > $delta_filt`;
-
-# convert delta to table
-`echo -e "rstart\trend\tqstart\tqend\trmatch\tqmatch\tidentity\trlen\tqlen\tref\tqry" > $filt_coords4plot`;
-`show-coords -HTl $delta_filt >> $filt_coords4plot`;
-`show-coords -THrd $delta_filt > $filt_coords`;
-
-&runreport("step 02: NUCmer alignment done");
+if (!$onlyplot) {
+	# NUCmer
+	`nucmer $nuc4para --delta $delta_out --threads $threads $ref_target $qry_target`;
+	# filter
+	`delta-filter -m -i $identity -l $match $delta_out > $delta_filt`;
+	# convert delta to table
+	`echo -e "rstart\trend\tqstart\tqend\trmatch\tqmatch\tidentity\trlen\tqlen\tref\tqry" > $filt_coords4plot`;
+	`show-coords -HTl $delta_filt >> $filt_coords4plot`;
+	`show-coords -THrd $delta_filt > $filt_coords`;
+	&runreport("step 02: NUCmer alignment done");
+} else {
+	&runreport("Alignment skipped due to --onlyplot");
+}
 
 ###############################################
 # 3. syri
@@ -212,12 +225,16 @@ my $filt_coords4plot = $prefix."/02d_".$prefix.$qchr."_".$rchr.".filt.coords4plo
 my $syri_outdir = $prefix;
 my $syri_prefix = "03_".$qchr."_".$rchr;
 my $syri_cmd = "syri --dir $syri_outdir --prefix $syri_prefix -c $filt_coords --nc $threads -r $ref_target -q $qry_target -d $delta_filt $syriOption";
-&runreport("step 03a: Syri command");
+&runreport("Syri command:");
 print STDERR "  $syri_cmd\n";
-system($syri_cmd);
-#`syri --dir $syri_outdir --prefix $syri_prefix -c $filt_coords --nc $threads -r $ref_target -q $qry_target -d $delta_filt $syriOption`;
 
-&runreport("step 03b: Syri run done");
+if (!$onlyplot) {
+	system($syri_cmd);
+	#`syri --dir $syri_outdir --prefix $syri_prefix -c $filt_coords --nc $threads -r $ref_target -q $qry_target -d $delta_filt $syriOption`;
+	&runreport("step 03: Syri done");
+} else {
+	&runreport("Syri was skipped due to --onlyplot");
+}
 
 ###############################################
 # 4. plot
@@ -340,3 +357,6 @@ sub revcom {
 	return $revcomseq;
 }
 
+# versions
+# 0.1.1: added --onlyplot
+#
