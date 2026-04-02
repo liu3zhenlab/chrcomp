@@ -30,6 +30,6 @@ Please report any bugs or suggestion on github or by email to Sanzhen Liu ([liu3
 The package chrcomp is distributed under MIT licence.
 
 ## versions
-0.1.1: added --onlyplot to allow to replot after a successful run
+0.1.1: added --onlyplot to allow to replot after a successful run  
 0.1.0: created an initial version
 
