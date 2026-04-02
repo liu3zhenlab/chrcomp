@@ -1,0 +1,26 @@
+[31mWarning: the directory outAB exists.
+[0m[35mo 2026-03-01 13:04:34
+[0m  Start to run chrcomp.
+[35mo 2026-03-01 13:04:34
+[0m  Requirement checked.
+[35mo 2026-03-01 13:04:34
+[0m  step 01: Query and reference sequences retrieved.
+[35mo 2026-03-01 13:04:52
+[0m  step 02: NUCmer alignment done.
+[35mo 2026-03-01 13:04:52
+[0m  Syri command.
+  syri --dir outAB --prefix 03_chr5_chr5 -c outAB/02c_outABchr5_chr5.filt.coords --nc 4 -r outAB/01b_ref_chr5.fasta -q outAB/01a_qry_chr5.fasta -d outAB/02b_outABchr5_chr5.filt.delta --invgaplen 1000000 --allow-offset 100 &>/dev/null
+[35mo 2026-03-01 13:04:55
+[0m  step 03: Syri done.
+[35mo 2026-03-01 13:04:56
+[0m  step 01: Query and reference sequences retrieved.
+[35mo 2026-03-01 13:05:04
+[0m  step 02: NUCmer alignment done.
+[35mo 2026-03-01 13:05:04
+[0m  Syri command.
+  syri --dir outAB --prefix 03_chr7_chr7 -c outAB/02c_outABchr7_chr7.filt.coords --nc 4 -r outAB/01b_ref_chr7.fasta -q outAB/01a_qry_chr7.fasta -d outAB/02b_outABchr7_chr7.filt.delta --invgaplen 1000000 --allow-offset 100 &>/dev/null
+[35mo 2026-03-01 13:05:06
+[0m  step 03: Syri done.
+[35mo 2026-03-01 13:05:08
+[0m  step 04c: Syri figure plotted.
+/var/spool/slurm/d/job6743481/slurm_script: line 15: --match: command not found

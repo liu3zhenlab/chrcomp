@@ -61,7 +61,7 @@ sub prompt {
     --bandcol <str>  a valid R color name ($bandcol)
     --onlyplot       only perform plotting if specified; alignment and syri will be skipped
                      "--onlyplot" is only useful for rerunning the analysis that was successfully run.
-					 The purpose is to allow to reset a few plotting parameters. 
+                     The purpose is to allow to reset a few plotting parameters. 
     --version        version information
     --help           help information.
 EOF

@@ -1,0 +1,433 @@
+#!/usr/bin/perl -w
+#======================================================================
+# mchrcomp 
+#
+# Author: Sanzhen Liu <liu3zhen@ksu.edu>
+# 2/29/2026
+#
+# The Perl script to find the match region and plot alignments between
+# multiple pairs of sequences
+#======================================================================
+
+use strict;
+use warnings;
+use Getopt::Long;
+use File::Temp;
+use FindBin;
+use Term::ANSIColor qw(:constants);
+use lib "$FindBin::Bin/lib";
+my $version = "0.0.1";
+
+my $prefix = "chrcomp_out";
+my $threads = 4;
+my $nuc4para = "--maxmatch --breaklen 500 --mincluster 500 --minmatch 25";
+my $identity = 90;
+my $match = 10000;
+my $bandcol = "bisque3";
+my $syriOption = "--invgaplen 1000000 --allow-offset 100";
+my $minsyn = 30000; # minimal syntenic regions to plot in Syriplot
+my $minothers = 50000; # minimal lengths of other SV types to plot in Syriplot
+my $maxinvsegratio = 3; # maximum length ratio of two inverted segments
+my $minINSDEL = 10000; # minimal length of large INDEL
+my $pdfout=$prefix.".syri.pdf";
+my $pdfwidth=5; # plot width
+my $pdfheight=4; # plot height
+my $chrcol="gray80"; # chr color
+my $chrheight=0.02; # chr height in a proportion of --pdfheight 
+sub prompt {
+    print <<EOF;
+    Usage: perl $0 --qry <fasta> --ref <fasta> --qchr <str> --rchr <str> [options]
+    [Options]
+    --qry <file>     the query fasta file with one or multiple sequences that include the sequence specified by --qchr; required
+    --ref <file>     the reference fasta file with one or multiple sequences that include the sequence specified by --rchr; required
+    --qryname <str>  query name; optional 
+    --refname <str>  reference name; optional
+    --comp <file>    the table file contains comparison list; 6 tab- or comma-separated column input; at least 2 columns are required
+                     each row represents a comparison - for example, chr1,chrA,chr1,chr1,0,0
+                     1: query chr name; must match a name in the --qry genome; required in the table
+                     2: ref chr name; must match a name in the --ref genome; required in the table
+                     3: new query chr name to replace the original name in the genome
+                     4: new ref chr name to replace the original name in the genome
+                     5: query reverse complement (RC); 0 or 1; 0=no RC and 1=RC; default=0
+                     6: ref RC (0 or 1); default=0
+    --identity <num> minimal percentage of identity from 0 to 100 ($identity)
+    --match <num>    minimal bp match of an alignment ($match)
+    --nuc4para <str> four NUCmer parameters ($nuc4para)
+    --syriOption <str> Optional parameters for the syri run ($syriOption)
+    --minsyn <num>   minimal syntenic regions to plot in Syriplot ($minsyn)
+    --minothers <num> minimal lengths of other SV types to plot in Syriplot ($minothers)
+    --maxinvsegratio <float> maximum length ratio of two inverted segments ($maxinvsegratio)
+    --minINSDEL <num>   minimal length of large insertion or deletion in syntenic regions ($minINSDEL)
+    --prefix <str>   the output directory and the prefix for output files ($prefix)
+    --threads <num>  number of cpus ($threads)
+    --bandcol <str>  a valid R color name ($bandcol)
+    --onlyplot       only perform plotting if specified; alignment and syri will be skipped
+                     "--onlyplot" is only useful for rerunning the analysis that was successfully run.
+                     The purpose is to allow to reset a few plotting parameters if alignments and syri have been generated. 
+    --pdfout         the PDF file name for plot output ($pdfout)
+    --pdfwidth       plot width in inch ($pdfwidth)
+    --pdfheight      plot height in inch ($pdfheight)
+    --chrcol         chr color ($chrcol)
+    --chrheight      chr height in a proportion of --pdfheight ($chrheight)
+    --version        version information
+    --help           help information
+EOF
+exit;
+}
+
+###############################################
+# parameters:
+###############################################
+my %opts = ();
+my ($qry, $ref, $comp);
+
+&GetOptions(\%opts, "qry=s", "ref=s", 
+                    "qryname=s", "refname=s",
+                    "comp=s",
+                    "identity=i", "match=i",
+                    "nuc4para=s", "syriOption=s",
+                    "minsyn=i", "minINSDEL=i", "minothers=i",
+                    "maxinvsegratio=f", "onlyplot",
+                    "prefix=s", "threads=i", "bandcol=s",
+                    "version", "help");
+
+if (exists $opts{version}) {
+	print "$version\n";
+	exit;
+}
+
+&prompt if exists $opts{help} or !%opts;
+if (!exists $opts{qry} or !exists $opts{ref} or !exists $opts{comp}) {
+	print STDERR RED, "All --qry, --ref, --comp are required\n", RESET;
+	&prompt;
+} else {
+	$qry = $opts{qry};
+	$ref = $opts{ref};
+	$comp = $opts{comp};
+}
+
+$nuc4para = $opts{nuc4para} if exists $opts{nuc4para};
+$syriOption = $opts{syriOption} if exists $opts{syriOption};
+$identity = $opts{identity} if exists $opts{identity};
+$match = $opts{match} if exists $opts{match};
+$minsyn = $opts{minsyn} if exists $opts{minsyn};
+$minINSDEL = $opts{minINSDEL} if exists $opts{minINSDEL};
+$minothers = $opts{minothers} if exists $opts{minothers};
+$maxinvsegratio = $opts{maxinvsegratio} if exists $opts{maxinvsegratio};
+$prefix = $opts{prefix} if exists $opts{prefix};
+$threads = $opts{threads} if exists $opts{threads};
+$bandcol = $opts{bandcol} if exists $opts{bandcol};
+$pdfout = $opts{pdfout} if exists $opts{pdfout};
+$pdfwidth = $opts{pdfwidth} if exists $opts{pdfwidth};
+$pdfheight = $opts{pdfheight} if exists $opts{pdfheight};
+$chrcol = $opts{chrcol} if exists $opts{chrcol};
+$chrheight = $opts{chrheight} if exists $opts{chrheight};
+my $onlyplot = 0;
+if (exists $opts{onlyplot}) {
+	$onlyplot = 1;
+}
+
+# query and ref genome names
+my $qryname = "qry";
+my $refname = "ref";
+$qryname = $opts{qryname} if (exists $opts{qryname});
+$refname = $opts{refname} if (exists $opts{refname});
+
+####################################################
+# read --comp data (at least two columns)
+####################################################
+my $comp_table = $opts{comp};
+
+my (@qchr_set, @rchr_set, @qchr_newname_set, @rchr_newname_set);
+my (@qchr_revcom_set, @rchr_revcom_set);
+open (COMP, "<", $comp_table) || die;
+while (<COMP>) {
+	chomp;
+	my @line = split /[,\t]/, $_; # comma or tab separated data
+	if ($#line<1) {
+		&runreport("ERROR: At least two columns are required");
+	} else {
+		push(@qchr_set, $line[0]);
+		push(@rchr_set, $line[1]);
+	}
+	
+	# 3rd column
+	if ($#line >= 2 and $line[2] ne "") {
+		push(@qchr_newname_set, $line[2]);
+	} else {
+		push(@qchr_newname_set, $line[0]);
+	}
+	
+	# 4th column
+	if ($#line >= 3 and $line[3] ne "") {
+		push(@rchr_newname_set, $line[3]);
+	} else {
+		push(@rchr_newname_set, $line[1]);
+	}
+
+	# 5th column
+	if ($#line >= 4 and $line[4] ne "") {
+		if ($line[4] == 0 or $line[4] == 1) {
+			push(@qchr_revcom_set, $line[4]);
+		} else {
+			&runreport("ERROR: Only 0 or 1 is allowed in 5th column in $comp_table");
+		}
+	} else {
+		push(@qchr_revcom_set, 0);
+	}
+
+	# 6th column
+	if ($#line >= 5 and $line[5] ne "") {
+		if ($line[5] == 0 or $line[5] == 1) {
+			push(@rchr_revcom_set, $line[5]);
+		} else {
+			&runreport("ERROR: Only 0 or 1 is allowed in 6th column in $comp_table");
+		}
+	} else {
+		push(@rchr_revcom_set, 0);
+	}
+}
+close COMP;
+
+###############################################
+# preparation
+###############################################
+# create a directory for outputs
+if (-d $prefix) {
+	print STDERR RED, "Warning: the directory $prefix exists.\n", RESET;
+} else {
+	`mkdir $prefix`;
+}
+
+# script path:
+my $scriptPath = $FindBin::Bin;
+my $utilsPath = $scriptPath."/utils/";
+
+&runreport("Start to run chrcomp");
+
+###############################################
+# check requirments
+###############################################
+&cmd_check("nucmer");
+&cmd_check("delta-filter");
+&cmd_check("show-coords");
+&cmd_check("R");
+#Rscript -e "if ( !requireNamespace('optparse', quietly=TRUE) ) { cat('R package optparse is not installed\n') }"
+&cmd_check("syri");
+
+&runreport("Requirement checked");
+
+my $syri_metafile = $prefix."/04i_syri.meta";
+open(SRLIST, ">", $syri_metafile) || die;
+
+for (my $i=0; $i<=$#qchr_set; $i++) {
+	my $qchr = $qchr_set[$i];
+	my $rchr = $rchr_set[$i];
+	my $newqchr = $qchr_newname_set[$i];
+	my $newrchr = $rchr_newname_set[$i];
+	my $qrevcom = $qchr_revcom_set[$i];
+	my $rrevcom = $rchr_revcom_set[$i];
+
+	###############################################
+	# 1. sequence extraction
+	###############################################
+	# output fasta files:
+	my ($qry_target, $ref_target);
+	$qry_target = $prefix."/01a_".$qryname."_".$qchr.".fasta";
+	$ref_target = $prefix."/01b_".$refname."_".$rchr.".fasta";
+
+	if (!$onlyplot) {
+		&subseq($qry, $qchr, $newqchr, $qrevcom, $qry_target);
+		&subseq($ref, $rchr, $newrchr, $rrevcom, $ref_target);
+		&runreport("step 01: Query and reference sequences retrieved");
+	} else {
+		&runreport("Sequence retrieval was skipped due to --onlyplot");
+	}
+
+	###############################################
+	# 2. nucmer alignment
+	###############################################
+	my $delta_out = $prefix."/02a_".$prefix.$qchr."_".$rchr.".raw.delta";
+	my $delta_filt = $prefix."/02b_".$prefix.$qchr."_".$rchr.".filt.delta";
+	my $filt_coords = $prefix."/02c_".$prefix.$qchr."_".$rchr.".filt.coords";
+	my $filt_coords4plot = $prefix."/02d_".$prefix.$qchr."_".$rchr.".filt.coords4plot";
+	my $qchr_len = $prefix."/02e_".$prefix."_".$qryname."_".$qchr.".chrlen";
+	my $rchr_len = $prefix."/02f_".$prefix."_".$refname."_".$rchr.".chrlen";
+
+	if (!$onlyplot) {
+		# NUCmer
+		`nucmer $nuc4para --delta $delta_out --threads $threads $ref_target $qry_target`;
+		#`nucmer $nuc4para --delta $delta_out $ref_target $qry_target`;
+		# filter
+		`delta-filter -m -i $identity -l $match $delta_out > $delta_filt`;
+		# convert delta to table
+		`echo -e "rstart\trend\tqstart\tqend\trmatch\tqmatch\tidentity\trlen\tqlen\tref\tqry" > $filt_coords4plot`;
+		`show-coords -HTl $delta_filt >> $filt_coords4plot`;
+		`show-coords -THrd $delta_filt > $filt_coords`;
+		
+		open ALN, "<", $filt_coords4plot or die $!;
+		open QLEN, ">", $qchr_len or die $!;
+		open RLEN, ">", $rchr_len or die $!;
+		while (<ALN>) {
+			if ($. == 2) {
+        		chomp;
+        		my @field = split /\t/;
+        		print QLEN "$field[10]\t$field[8]\n";
+				print RLEN "$field[9]\t$field[7]\n";
+        		last;
+    		}
+		}
+		close QLEN; close RLEN;
+		close ALN;
+
+		&runreport("step 02: NUCmer alignment done");
+	} else {
+		&runreport("Alignment skipped due to --onlyplot");
+	}
+
+	###############################################
+	# 3. syri
+	###############################################
+	my $syri_outdir = $prefix;
+	my $syri_prefix = "03_".$qchr."_".$rchr;
+	my $syri_cmd = "syri --dir $syri_outdir --prefix $syri_prefix -c $filt_coords --nc $threads -r $ref_target -q $qry_target -d $delta_filt $syriOption \&\>\/dev\/null";
+	&runreport("Syri command");
+	print STDERR "  $syri_cmd\n";
+
+	if (!$onlyplot) {
+		system($syri_cmd);
+		&runreport("step 03: Syri done");
+	} else {
+		&runreport("Syri was skipped due to --onlyplot");
+	}
+
+	# syri output
+	my $syri_out = $syri_outdir."/".$syri_prefix."syri.out";
+	if (-f $syri_out) {
+		print SRLIST "$syri_out\t$refname\t$rchr_len\tNA\t$qryname\t$qchr_len\tNA\t$newrchr\t$newqchr\n";
+	}
+} # end of processing all comparisons of chr/contig pairs
+
+###############################################
+# produce a meta file
+###############################################
+#'              1. syri output file name
+#'              2. Ref name (e.g., species name)
+#'              3. file name of reference chr lengths (2 columsn: chr and length in bp)
+#'              4. BED file name for reference highlights; set to NA if no inputs
+#'              5. Query name (e.g., species name)
+#'              6. file name of query chr lengths (2 columsn: chr and length in bp)
+#'              7. BED file name for query highlights; set to NA if no inputs
+#'                 1) chr 2) start 3) end 4) feature 5) color 6) proportion of the chr height
+#'              8. Ref chr name
+#'              9. Query chr name
+###############################################
+# plot
+###############################################
+my $mchrplot_r = $utilsPath."/mchr_syriplot.R";
+my $plot_main = $qryname."_vs_".$refname;
+`Rscript $mchr_syriplot_r \\
+	--srlist $syri_metafile \\
+	--min_syn_size $minsyn \\
+	--min_others_size $minothers \\
+    --max_invseg_ratio $maxinvsegratio \\
+    --minINSDEL $minINSDEL \\
+	--main "$plot_main" \\
+	--chr_col $chrcol \\
+	--chr_height_prop $chrheight \\
+	--outfile "$pdfout" \\
+	--pdfwidth $pdfwidth \\
+	--pdfheight $pdfheight`;
+
+&runreport("step 04c: Syri figure plotted");
+
+###############################################
+# cleanup
+###############################################
+#if (! exists $opts{ref}) {
+#	`rm $ref_fas*`;
+#}
+
+###############################################
+# module 1: check command availability
+###############################################
+sub cmd_check {
+	my $cmd = shift;
+	my $cmdPath=`which $cmd 2>/dev/null`;
+	if (!$cmdPath) {# not founded
+		print STDERR RED, "  $cmd is not found\n", RESET;
+		print STDERR RED, "Exit\n", RESET;
+		exit;
+	}
+}
+
+###############################################
+# module 2: report running result
+###############################################
+# funtion to report running return
+sub runreport {
+	my $injob = shift;
+    my $dateinfo = `date +'o %Y-%m-%d %H:%M:%S'`;
+	print STDERR MAGENTA, "$dateinfo", RESET;
+	print STDERR "  $injob.\n";
+}
+
+###############################################
+# module 3: extract sequence
+###############################################
+# functoin to extract target sequence (similar to getfasta in bedtools)
+sub subseq {
+	my ($infas, $inchr, $newchrname, $in_revcom, $outfas) = @_;
+	my $inchr_seq = "";
+	my $outseq;
+	open(FAS, "<", $infas) || die;
+	while (<FAS>) {
+		chomp;
+		if (/^>(.+)/) {
+			my $full_name = $1;
+			my $short_name = $full_name;
+			$short_name =~ s/[ \t].*$//g;
+			if (($full_name eq $inchr) or ($short_name eq $inchr)) {
+				$_ = <FAS>; chomp;
+				while ($_ !~ /^>/) {
+					$inchr_seq .= $_;
+					last if eof;
+					$_ = <FAS>; chomp;
+				}
+				last;
+			}
+		}
+	}
+	close FAS;
+	
+	if ($inchr_seq eq "") {
+		&runreport("ERROR: $inchr was not found in $infas");
+		exit;
+	} else {
+		$outseq = $inchr_seq;
+	}
+
+	# reverse complement if specified
+	if ($in_revcom) {
+		$outseq = &revcom($outseq);
+	}
+
+	# print out extracted sequence:
+	open(OUT, ">", $outfas) || die;
+	print OUT ">$newchrname\n";
+	while (my $chunk = substr($outseq, 0, 80, "")) {
+		print OUT "$chunk\n";
+	}
+	close OUT;
+}
+
+### module for reverse complement sequences
+sub revcom {
+	my $ori_seq = shift @_;
+	my $revcomseq = reverse($ori_seq);
+	$revcomseq =~ tr/AGCTagct/TCGAtcga/;
+	return $revcomseq;
+}
+
+# versions
+#

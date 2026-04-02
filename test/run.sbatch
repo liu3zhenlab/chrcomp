@@ -3,7 +3,7 @@
 #SBATCH --mem=48G
 #SBATCH --time=3-00:00:00
 
-. "/homes/liu3zhen/anaconda3/etc/profile.d/conda.sh"
+. "/homes/liu3zhen/anaconda/etc/profile.d/conda.sh"
 export PATH="/homes/liu3zhen/anaconda/bin:$PATH"
 conda activate chrcomp
 

@@ -14,6 +14,13 @@ cd test
 sh run.sh
 ```
 
+Here is the alternative way to set up the Conda environment:
+```
+conda create -n chrcomp
+conda activate chrcomp
+conda install -c conda-forge -c bioconda mummer4 syri r-base r-optparse
+```
+
 ## Bug report
 
 Please report any bugs or suggestion on github or by email to Sanzhen Liu ([liu3zhen@ksu.edu](mailto:liu3zhen@ksu.edu)).

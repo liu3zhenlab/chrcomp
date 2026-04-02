@@ -323,7 +323,7 @@ syriplot <- function(syriout, ref.chrlen, qry.chrlen, qchr, rchr, ref.name, qry.
   parentid <- gsub("[0-9]+$", "", parentid)
   synINS <- syrichr[(syrichr$Type=="INS" | syrichr$Type=="DEL") & parentid=="SYN" &
                    ((abs(syrichr$refE - syrichr$refS) >= minINS ) |
-				   (abs(syrichr$qryE - syrichr$qryS) >= minINS)), ]
+synINSdraw				   (abs(syrichr$qryE - syrichr$qryS) >= minINS)), ]
   
   if (nrow(synINS) > 0) {
   	apply(synINS[,1:4], 1, synINSdraw, ybottom=refbase + 0.01, ytop=qrybase - 0.01)

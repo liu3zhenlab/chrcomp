@@ -1,0 +1,114 @@
+2026-03-01 10:50:08,706 - Reading Coords - INFO - syri:134 - Reading input from .tsv file
+2026-03-01 10:50:08,713 - Reading Coords - INFO - syri:134 - Filtering low-quality alignments (alignment quality < 90, alignment length < 100)
+2026-03-01 10:50:08,715 - Reading Coords - INFO - syri:134 - No Inverted alignments present.
+2026-03-01 10:50:08,718 - Reading Coords - WARNING - syri:134 - Chromosomes IDs do not match.
+2026-03-01 10:50:08,718 - Reading Coords - WARNING - syri:134 - Matching them automatically. For each reference genome, most similar query genome will be selected. Check mapids.txt for mapping used.
+2026-03-01 10:50:08,720 - Reading Coords - INFO - syri:134 - setting A7 as B7
+2026-03-01 10:50:08,769 - syri - INFO - syri:215 - starting
+2026-03-01 10:50:08,770 - syri - INFO - syri:215 - Analysing chromosomes: ['B7']
+2026-03-01 10:50:08,796 - syri.B7 - INFO - mapstar:48 - B7 (20, 11)
+2026-03-01 10:50:08,796 - syri.B7 - INFO - mapstar:48 - Identifying Synteny for chromosome B7
+2026-03-01 10:50:08,835 - syri.B7 - INFO - mapstar:48 - Identifying Inversions for chromosome B7
+2026-03-01 10:50:08,838 - syri.B7 - INFO - mapstar:48 - Identifying translocation and duplication for chromosome B7
+2026-03-01 10:50:08,891 - getCTX - INFO - syri:215 - Identifying cross-chromosomal translocation and duplication for chromosome2026-03-01 10:50:08.890981
+2026-03-01 10:50:09,009 - local_variation - INFO - syri:226 - Finding SVs in synOut.txt, invOut.txt, TLOut.txt, invTLOut.txt, ctxOut.txt
+2026-03-01 10:50:09,169 - local_variation - INFO - syri:246 - Finding SNPs and small indels
+2026-03-01 10:50:09,685 - local_variation - INFO - syri:258 - Combining outputs
+2026-03-01 10:50:09,691 - local_variation - INFO - syri:263 - Generating table output
+2026-03-01 10:50:09,996 - local_variation - INFO - syri:268 - Generating VCF
+2026-03-01 10:50:10,131 - local_variation - INFO - syri:276 - Finished syri
+2026-03-01 10:56:59,602 - Reading Coords - INFO - syri:134 - Reading input from .tsv file
+2026-03-01 10:56:59,632 - Reading Coords - INFO - syri:134 - Filtering low-quality alignments (alignment quality < 90, alignment length < 100)
+2026-03-01 10:56:59,635 - Reading Coords - INFO - syri:134 - No Inverted alignments present.
+2026-03-01 10:56:59,638 - Reading Coords - WARNING - syri:134 - Chromosomes IDs do not match.
+2026-03-01 10:56:59,638 - Reading Coords - WARNING - syri:134 - Matching them automatically. For each reference genome, most similar query genome will be selected. Check mapids.txt for mapping used.
+2026-03-01 10:56:59,644 - Reading Coords - INFO - syri:134 - setting A7 as B7
+2026-03-01 10:56:59,695 - syri - INFO - syri:215 - starting
+2026-03-01 10:56:59,695 - syri - INFO - syri:215 - Analysing chromosomes: ['B7']
+2026-03-01 10:56:59,722 - syri.B7 - INFO - mapstar:48 - B7 (20, 11)
+2026-03-01 10:56:59,722 - syri.B7 - INFO - mapstar:48 - Identifying Synteny for chromosome B7
+2026-03-01 10:56:59,764 - syri.B7 - INFO - mapstar:48 - Identifying Inversions for chromosome B7
+2026-03-01 10:56:59,767 - syri.B7 - INFO - mapstar:48 - Identifying translocation and duplication for chromosome B7
+2026-03-01 10:56:59,818 - getCTX - INFO - syri:215 - Identifying cross-chromosomal translocation and duplication for chromosome2026-03-01 10:56:59.818496
+2026-03-01 10:56:59,975 - local_variation - INFO - syri:226 - Finding SVs in synOut.txt, invOut.txt, TLOut.txt, invTLOut.txt, ctxOut.txt
+2026-03-01 10:57:00,140 - local_variation - INFO - syri:246 - Finding SNPs and small indels
+2026-03-01 10:57:00,689 - local_variation - INFO - syri:258 - Combining outputs
+2026-03-01 10:57:00,695 - local_variation - INFO - syri:263 - Generating table output
+2026-03-01 10:57:01,029 - local_variation - INFO - syri:268 - Generating VCF
+2026-03-01 10:57:01,167 - local_variation - INFO - syri:276 - Finished syri
+2026-03-01 11:04:49,243 - Reading Coords - INFO - syri:134 - Reading input from .tsv file
+2026-03-01 11:04:49,278 - Reading Coords - INFO - syri:134 - Filtering low-quality alignments (alignment quality < 90, alignment length < 100)
+2026-03-01 11:04:49,282 - Reading Coords - INFO - syri:134 - No Inverted alignments present.
+2026-03-01 11:04:49,284 - Reading Coords - WARNING - syri:134 - Chromosomes IDs do not match.
+2026-03-01 11:04:49,284 - Reading Coords - WARNING - syri:134 - Matching them automatically. For each reference genome, most similar query genome will be selected. Check mapids.txt for mapping used.
+2026-03-01 11:04:49,290 - Reading Coords - INFO - syri:134 - setting A7 as B7
+2026-03-01 11:04:49,345 - syri - INFO - syri:215 - starting
+2026-03-01 11:04:49,346 - syri - INFO - syri:215 - Analysing chromosomes: ['B7']
+2026-03-01 11:04:49,383 - syri.B7 - INFO - mapstar:48 - B7 (20, 11)
+2026-03-01 11:04:49,384 - syri.B7 - INFO - mapstar:48 - Identifying Synteny for chromosome B7
+2026-03-01 11:04:49,427 - syri.B7 - INFO - mapstar:48 - Identifying Inversions for chromosome B7
+2026-03-01 11:04:49,430 - syri.B7 - INFO - mapstar:48 - Identifying translocation and duplication for chromosome B7
+2026-03-01 11:04:49,493 - getCTX - INFO - syri:215 - Identifying cross-chromosomal translocation and duplication for chromosome2026-03-01 11:04:49.493038
+2026-03-01 11:04:49,647 - local_variation - INFO - syri:226 - Finding SVs in synOut.txt, invOut.txt, TLOut.txt, invTLOut.txt, ctxOut.txt
+2026-03-01 11:04:49,811 - local_variation - INFO - syri:246 - Finding SNPs and small indels
+2026-03-01 11:04:50,357 - local_variation - INFO - syri:258 - Combining outputs
+2026-03-01 11:04:50,363 - local_variation - INFO - syri:263 - Generating table output
+2026-03-01 11:04:50,686 - local_variation - INFO - syri:268 - Generating VCF
+2026-03-01 11:04:50,824 - local_variation - INFO - syri:276 - Finished syri
+2026-03-01 11:06:21,260 - Reading Coords - INFO - syri:134 - Reading input from .tsv file
+2026-03-01 11:06:21,286 - Reading Coords - INFO - syri:134 - Filtering low-quality alignments (alignment quality < 90, alignment length < 100)
+2026-03-01 11:06:21,289 - Reading Coords - INFO - syri:134 - No Inverted alignments present.
+2026-03-01 11:06:21,292 - Reading Coords - WARNING - syri:134 - Chromosomes IDs do not match.
+2026-03-01 11:06:21,293 - Reading Coords - WARNING - syri:134 - Matching them automatically. For each reference genome, most similar query genome will be selected. Check mapids.txt for mapping used.
+2026-03-01 11:06:21,305 - Reading Coords - INFO - syri:134 - setting A7 as B7
+2026-03-01 11:06:21,362 - syri - INFO - syri:215 - starting
+2026-03-01 11:06:21,363 - syri - INFO - syri:215 - Analysing chromosomes: ['B7']
+2026-03-01 11:06:21,395 - syri.B7 - INFO - mapstar:48 - B7 (20, 11)
+2026-03-01 11:06:21,395 - syri.B7 - INFO - mapstar:48 - Identifying Synteny for chromosome B7
+2026-03-01 11:06:21,439 - syri.B7 - INFO - mapstar:48 - Identifying Inversions for chromosome B7
+2026-03-01 11:06:21,443 - syri.B7 - INFO - mapstar:48 - Identifying translocation and duplication for chromosome B7
+2026-03-01 11:06:21,499 - getCTX - INFO - syri:215 - Identifying cross-chromosomal translocation and duplication for chromosome2026-03-01 11:06:21.499378
+2026-03-01 11:06:21,645 - local_variation - INFO - syri:226 - Finding SVs in synOut.txt, invOut.txt, TLOut.txt, invTLOut.txt, ctxOut.txt
+2026-03-01 11:06:21,830 - local_variation - INFO - syri:246 - Finding SNPs and small indels
+2026-03-01 11:06:22,371 - local_variation - INFO - syri:258 - Combining outputs
+2026-03-01 11:06:22,376 - local_variation - INFO - syri:263 - Generating table output
+2026-03-01 11:06:22,739 - local_variation - INFO - syri:268 - Generating VCF
+2026-03-01 11:06:22,896 - local_variation - INFO - syri:276 - Finished syri
+2026-03-01 12:57:52,315 - Reading Coords - INFO - syri:134 - Reading input from .tsv file
+2026-03-01 12:57:52,348 - Reading Coords - INFO - syri:134 - Filtering low-quality alignments (alignment quality < 90, alignment length < 100)
+2026-03-01 12:57:52,351 - Reading Coords - INFO - syri:134 - No Inverted alignments present.
+2026-03-01 12:57:52,353 - Reading Coords - WARNING - syri:134 - Chromosomes IDs do not match.
+2026-03-01 12:57:52,354 - Reading Coords - WARNING - syri:134 - Matching them automatically. For each reference genome, most similar query genome will be selected. Check mapids.txt for mapping used.
+2026-03-01 12:57:52,360 - Reading Coords - INFO - syri:134 - setting A7 as B7
+2026-03-01 12:57:52,411 - syri - INFO - syri:215 - starting
+2026-03-01 12:57:52,412 - syri - INFO - syri:215 - Analysing chromosomes: ['B7']
+2026-03-01 12:57:52,438 - syri.B7 - INFO - mapstar:48 - B7 (20, 11)
+2026-03-01 12:57:52,438 - syri.B7 - INFO - mapstar:48 - Identifying Synteny for chromosome B7
+2026-03-01 12:57:52,479 - syri.B7 - INFO - mapstar:48 - Identifying Inversions for chromosome B7
+2026-03-01 12:57:52,482 - syri.B7 - INFO - mapstar:48 - Identifying translocation and duplication for chromosome B7
+2026-03-01 12:57:52,535 - getCTX - INFO - syri:215 - Identifying cross-chromosomal translocation and duplication for chromosome2026-03-01 12:57:52.535526
+2026-03-01 12:57:52,657 - local_variation - INFO - syri:226 - Finding SVs in synOut.txt, invOut.txt, TLOut.txt, invTLOut.txt, ctxOut.txt
+2026-03-01 12:57:52,812 - local_variation - INFO - syri:246 - Finding SNPs and small indels
+2026-03-01 12:57:53,321 - local_variation - INFO - syri:258 - Combining outputs
+2026-03-01 12:57:53,324 - local_variation - INFO - syri:263 - Generating table output
+2026-03-01 12:57:53,792 - local_variation - INFO - syri:268 - Generating VCF
+2026-03-01 12:57:53,929 - local_variation - INFO - syri:276 - Finished syri
+2026-03-01 13:05:04,818 - Reading Coords - INFO - syri:134 - Reading input from .tsv file
+2026-03-01 13:05:04,852 - Reading Coords - INFO - syri:134 - Filtering low-quality alignments (alignment quality < 90, alignment length < 100)
+2026-03-01 13:05:04,855 - Reading Coords - INFO - syri:134 - No Inverted alignments present.
+2026-03-01 13:05:04,857 - Reading Coords - WARNING - syri:134 - Chromosomes IDs do not match.
+2026-03-01 13:05:04,858 - Reading Coords - WARNING - syri:134 - Matching them automatically. For each reference genome, most similar query genome will be selected. Check mapids.txt for mapping used.
+2026-03-01 13:05:04,862 - Reading Coords - INFO - syri:134 - setting A7 as B7
+2026-03-01 13:05:04,915 - syri - INFO - syri:215 - starting
+2026-03-01 13:05:04,916 - syri - INFO - syri:215 - Analysing chromosomes: ['B7']
+2026-03-01 13:05:04,945 - syri.B7 - INFO - mapstar:48 - B7 (20, 11)
+2026-03-01 13:05:04,946 - syri.B7 - INFO - mapstar:48 - Identifying Synteny for chromosome B7
+2026-03-01 13:05:04,989 - syri.B7 - INFO - mapstar:48 - Identifying Inversions for chromosome B7
+2026-03-01 13:05:04,992 - syri.B7 - INFO - mapstar:48 - Identifying translocation and duplication for chromosome B7
+2026-03-01 13:05:05,052 - getCTX - INFO - syri:215 - Identifying cross-chromosomal translocation and duplication for chromosome2026-03-01 13:05:05.052155
+2026-03-01 13:05:05,183 - local_variation - INFO - syri:226 - Finding SVs in synOut.txt, invOut.txt, TLOut.txt, invTLOut.txt, ctxOut.txt
+2026-03-01 13:05:05,367 - local_variation - INFO - syri:246 - Finding SNPs and small indels
+2026-03-01 13:05:05,889 - local_variation - INFO - syri:258 - Combining outputs
+2026-03-01 13:05:05,894 - local_variation - INFO - syri:263 - Generating table output
+2026-03-01 13:05:06,712 - local_variation - INFO - syri:268 - Generating VCF
+2026-03-01 13:05:06,845 - local_variation - INFO - syri:276 - Finished syri
